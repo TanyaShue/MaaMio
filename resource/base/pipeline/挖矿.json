@@ -1,0 +1,53 @@
+{
+  "挖矿-导航到目标层数": {
+    "next": [
+      "挖矿-点击矿石"
+    ],
+    "recognition": "DirectHit"
+  },
+  "挖矿-点击开采": {
+    "action": "Click",
+    "next": [
+      "挖矿-领取战斗奖励"
+    ],
+    "recognition": "TemplateMatch",
+    "roi": [
+      0,
+      236,
+      720,
+      697
+    ],
+    "template": [
+      "挖矿/挖矿-点击开采_1.png"
+    ],
+    "timeout": 180000
+  },
+  "挖矿-点击矿石": {
+    "action": "Click",
+    "next": [
+      "挖矿-点击开采"
+    ],
+    "post_delay": 1200,
+    "recognition": "TemplateMatch",
+    "roi": [
+      1,
+      268,
+      719,
+      624
+    ],
+    "template": [
+      "挖矿/挖矿-点击矿石_1.png"
+    ]
+  },
+  "挖矿-领取战斗奖励": {
+    "action": "Click",
+    "expected": "触·摸·继·续",
+    "recognition": "OCR",
+    "roi": [
+      21,
+      781,
+      699,
+      156
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "Tutorial.Start": {
+    "action": "DoNothing",
+    "expected": ".*",
+    "recognition": "OCR",
+    "roi": [
+      0,
+      0,
+      1280,
+      720
+    ]
+  }
+}

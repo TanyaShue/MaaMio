@@ -1,0 +1,76 @@
+{
+    "addons": {
+        "autoFormat": {
+            "enabled": true
+        },
+        "community": {
+            "enabled": true
+        },
+        "devTools": {
+            "enabled": true
+        },
+        "gitCliff": {
+            "enabled": true
+        },
+        "github": {
+            "enabled": true
+        },
+        "optimizeImages": {
+            "enabled": true
+        },
+        "schemaSync": {
+            "enabled": true
+        }
+    },
+    "controller": {
+        "kinds": [
+            "Adb"
+        ]
+    },
+    "features": {
+        "ci": {
+            "enabled": true
+        },
+        "quality": {
+            "enabled": true
+        },
+        "release": {
+            "enabled": true
+        },
+        "vscode": {
+            "enabled": true
+        }
+    },
+    "license": {
+        "spdx": "AGPL-3.0-or-later"
+    },
+    "maafw": {
+        "channel": "stable",
+        "version": ""
+    },
+    "network": {
+        "mode": "auto"
+    },
+    "project": {
+        "displayName": "MaaMio",
+        "initialTemplate": "pipeline",
+        "slug": "maamio",
+        "version": "0.1.0"
+    },
+    "resources": [
+        {
+            "enabled": true,
+            "label": "Base",
+            "path": "resource/base",
+            "slug": "base"
+        }
+    ],
+    "runtime": {
+        "mfa": {
+            "channel": "stable",
+            "enabled": true,
+            "version": ""
+        }
+    },
+    "schemaVersion": 2
+}
