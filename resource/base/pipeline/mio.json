@@ -1,0 +1,82 @@
+{
+  "mio-103994": {
+    "next": [
+      "[JumpBack]mio-441848"
+    ],
+    "on_error": [
+      "[JumpBack]mio-808645"
+    ],
+    "rate_limit": 60000,
+    "recognition": "DirectHit",
+    "timeout": 620000
+  },
+  "mio-264981": {
+    "action": "Click",
+    "next": [
+      "mio-366914",
+      "[JumpBack]mio-360462"
+    ],
+    "recognition": "TemplateMatch",
+    "roi": [
+      21,
+      731,
+      699,
+      121
+    ],
+    "template": [
+      "特殊/mio-264981_1.png"
+    ]
+  },
+  "mio-360462": {
+    "action": "Click",
+    "next": [],
+    "recognition": "TemplateMatch",
+    "roi": [
+      3,
+      1114,
+      191,
+      166
+    ],
+    "template": [
+      "特殊/mio-360462_1.png"
+    ]
+  },
+  "mio-366914": {
+    "action": "Click",
+    "recognition": "TemplateMatch",
+    "roi": [
+      0,
+      791,
+      329,
+      205
+    ],
+    "template": [
+      "特殊/mio-366914_1.png"
+    ]
+  },
+  "mio-441848": {
+    "inverse": true,
+    "recognition": "DirectHit"
+  },
+  "mio-525687": {
+    "action": "Click",
+    "next": [],
+    "recognition": "TemplateMatch",
+    "roi": [
+      263,
+      1127,
+      232,
+      153
+    ],
+    "template": [
+      "特殊/mio-525687_1.png"
+    ]
+  },
+  "mio-808645": {
+    "next": [
+      "mio-264981",
+      "[JumpBack]mio-525687"
+    ],
+    "recognition": "DirectHit"
+  }
+}
