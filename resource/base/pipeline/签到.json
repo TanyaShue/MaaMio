@@ -1,0 +1,44 @@
+{
+    "签到-关闭弹窗": {
+        "action": "Click",
+        "recognition": "TemplateMatch",
+        "roi": [469, 274, 251, 183],
+        "template": ["签到/签到-关闭弹窗_1.png"]
+    },
+    "签到-开始签到": {
+        "next": ["签到-识别是否打开签到页面", "[JumpBack]签到-识别每日补给宝箱"],
+        "recognition": "DirectHit"
+    },
+    "签到-点击签到": {
+        "action": "Click",
+        "recognition": "TemplateMatch",
+        "roi": [430, 601, 280, 165],
+        "template": ["签到/签到-点击签到_1.png"]
+    },
+    "签到-确保关闭弹窗": {
+        "expected": "今日补给",
+        "inverse": true,
+        "recognition": "OCR",
+        "roi": [7, 552, 262, 95]
+    },
+    "签到-获得物品": {
+        "action": "Click",
+        "next": ["签到-确保关闭弹窗", "[JumpBack]签到-关闭弹窗"],
+        "recognition": "TemplateMatch",
+        "roi": [0, 330, 696, 182],
+        "target": [73, 997, 508, 143],
+        "template": ["签到/签到-924303_1.png"]
+    },
+    "签到-识别是否打开签到页面": {
+        "expected": "今日补给",
+        "next": ["签到-获得物品", "[JumpBack]签到-点击签到"],
+        "recognition": "OCR",
+        "roi": [7, 552, 262, 95]
+    },
+    "签到-识别每日补给宝箱": {
+        "action": "Click",
+        "recognition": "TemplateMatch",
+        "roi": [484, 246, 236, 234],
+        "template": ["签到/签到-识别每日补给宝箱_1.png"]
+    }
+}

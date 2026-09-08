@@ -22,6 +22,8 @@
         }
     ],
     "import": [
-        "./tasks/tutorial.json"
+        "./tasks/tutorial.json",
+        "./tasks/卖蛋.json"
+
     ]
 }
