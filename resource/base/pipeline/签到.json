@@ -6,6 +6,9 @@
         "template": ["签到/签到-关闭弹窗_1.png"]
     },
     "签到-开始签到": {
+        "focus": {
+            "Node.Recognition.Starting": "开始签到"
+        },
         "next": ["签到-识别是否打开签到页面", "[JumpBack]签到-识别每日补给宝箱"],
         "recognition": "DirectHit"
     },
