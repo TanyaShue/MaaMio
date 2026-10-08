@@ -1,0 +1,61 @@
+{
+    // 「打开游戏」：冷启动游戏 → 过场 / 健康游戏忠告 → 标题界面 → 自动登录 → 角色面板 → 主界面 → 培育室。
+    // 全部由「识别到才点」的锚点驱动，任何一步界面没出现都不会瞎点。
+    // 4 个锚点都在 tools/agent/tests/verify_anchors.py 里用真实录屏帧验过：
+    // 阈值 0.7 下正样本全部命中、负样本全部不命中。
+    "打开游戏-开始": {
+        "recognition": "DirectHit",
+        // 必须给足超时：next 列表会一直轮询到超时为止，默认 20s 撑不过冷启动。
+        "timeout": 180000,
+        // 入口：先判断是不是已经在培育室（热启动或重复执行时直接收工），否则去启动游戏。
+        "next": [
+            "打开游戏-确认完成",
+            "打开游戏-启动应用"
+        ]
+    },
+    "打开游戏-确认完成": {
+        "recognition": "TemplateMatch",
+        "template": ["打开游戏/打开游戏-确认完成_1.png"],
+        "threshold": 0.7,
+        // 培育室底栏是「装填/收蛋/派遣」，主界面底栏是「培育室/管理/出门」，两者互不误判。
+        "action": "DoNothing"
+    },
+    "打开游戏-启动应用": {
+        "recognition": "DirectHit",
+        // AIR 游戏必须写全 package/activity；已在运行时该动作只是切到前台。
+        "action": "StartApp",
+        "package": "air.net.pixvi.myrzx/air.net.pixvi.myrzx.AIRAppEntry",
+        "timeout": 180000,
+        "next": ["打开游戏-点击开始游戏"]
+    },
+    "打开游戏-点击开始游戏": {
+        "recognition": "TemplateMatch",
+        "template": ["打开游戏/打开游戏-点击开始游戏_1.png"],
+        "threshold": 0.7,
+        // 标题界面的「点击开始游戏」盖在半透明压暗条上，整串文字会随背景插画在 0.40~1.00 之间飘，
+        // 单独取不透明的「开始游戏」四字后最低 0.777，而任何非标题帧都不超过 0.421。
+        "action": "Click",
+        "timeout": 120000,
+        "next": [
+            "打开游戏-点击登录",
+            "打开游戏-进入培育室"
+        ]
+    },
+    "打开游戏-点击登录": {
+        "recognition": "TemplateMatch",
+        "template": ["打开游戏/打开游戏-点击登录_1.png"],
+        "threshold": 0.7,
+        // 账号是设备级的，启动后会自动登录，这里只负责在角色面板上按「登录」。
+        "action": "Click",
+        "timeout": 120000,
+        "next": ["打开游戏-进入培育室"]
+    },
+    "打开游戏-进入培育室": {
+        "recognition": "TemplateMatch",
+        "template": ["打开游戏/打开游戏-进入培育室_1.png"],
+        "threshold": 0.7,
+        "action": "Click",
+        "timeout": 60000,
+        "next": ["打开游戏-确认完成"]
+    }
+}
