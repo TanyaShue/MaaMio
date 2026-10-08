@@ -1,0 +1,378 @@
+{
+    // 「领取邮件」：逐封打开，用详情页有没有「收取」按钮判断（列表图标不可信——
+    // 实测「例行维护预告」是带缎带信封却有未领奖励，「国庆问候」是纯信封却已领过）。
+    //
+    // 两个踩过的坑，务必保留：
+    // 1) 领取后会弹出「获得物品」模态框（触·摸·继·续），它会吞掉后面所有点击。
+    //    所以「收取」之后必须先关弹窗，否则「返回」点不动，任务会卡在详情页。
+    // 2) 「返回」按钮在列表页的同一位置是「删除」按钮，误命中分数高达 0.6972。
+    //    因此「返回」的阈值必须抬到 0.85（真命中 0.9954），否则可能点到删除。
+    //
+    // MaaFramework 没有循环，4 行邮件展开成状态机。
+    "邮件-开始": {
+        "recognition": "DirectHit",
+        "next": ["邮件-打开邮箱"]
+    },
+    "邮件-打开邮箱": {
+        "recognition": "TemplateMatch",
+        "template": ["邮件/邮件-邮箱按钮_1.png"],
+        "threshold": 0.7,
+        // 培育室/主界面右上角的信封图标（固定 HUD 位置）。
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 15000,
+        "next": ["邮件-第1封"]
+    },
+    "邮件-第1封": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            30,
+            245,
+            185,
+            80
+        ],
+        "template": ["邮件/邮件-邮件箱标题_1.png"],
+        "threshold": 0.7,
+        // 识别「邮件箱」标题确认已进入列表页，再点第 1 行的标题区。
+        // next 里「收取」在前、「返回」在后：有奖励就领，已领过的直接返回。
+        "action": "Click",
+        "target": [
+            130,
+            411,
+            380,
+            56
+        ],
+        "post_delay": 1200,
+        "timeout": 2500,
+        "next": [
+            "邮件-第1封-收取",
+            "邮件-第1封-返回"
+        ]
+    },
+    "邮件-第1封-收取": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            370,
+            865,
+            160,
+            90
+        ],
+        "template": ["邮件/邮件-收取按钮_1.png"],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 800,
+        "timeout": 3000,
+        "next": ["邮件-第1封-关弹窗"],
+        "on_error": ["邮件-第1封-返回"]
+    },
+    "邮件-第1封-关弹窗": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            150,
+            340,
+            420,
+            90
+        ],
+        "template": ["邮件/邮件-获得物品横幅_1.png"],
+        "threshold": 0.7,
+        // 点掉「获得物品」弹窗；没弹窗（本次没领到东西）就走 on_error 去返回。
+        "action": "Click",
+        "target": [
+            230,
+            818,
+            265,
+            42
+        ],
+        "post_delay": 800,
+        "timeout": 3000,
+        "next": ["邮件-第1封-返回"],
+        "on_error": ["邮件-第1封-返回"]
+    },
+    "邮件-第1封-返回": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            515,
+            865,
+            160,
+            90
+        ],
+        "template": ["邮件/邮件-返回按钮_1.png"],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 2500,
+        "next": ["邮件-第2封"],
+        "on_error": ["邮件-第2封"]
+    },
+    "邮件-第2封": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            30,
+            245,
+            185,
+            80
+        ],
+        "template": ["邮件/邮件-邮件箱标题_1.png"],
+        "threshold": 0.7,
+        "action": "Click",
+        "target": [
+            130,
+            512,
+            380,
+            56
+        ],
+        "post_delay": 1200,
+        "timeout": 2500,
+        "next": [
+            "邮件-第2封-收取",
+            "邮件-第2封-返回"
+        ]
+    },
+    "邮件-第2封-收取": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            370,
+            865,
+            160,
+            90
+        ],
+        "template": ["邮件/邮件-收取按钮_1.png"],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 800,
+        "timeout": 3000,
+        "next": ["邮件-第2封-关弹窗"],
+        "on_error": ["邮件-第2封-返回"]
+    },
+    "邮件-第2封-关弹窗": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            150,
+            340,
+            420,
+            90
+        ],
+        "template": ["邮件/邮件-获得物品横幅_1.png"],
+        "threshold": 0.7,
+        "action": "Click",
+        "target": [
+            230,
+            818,
+            265,
+            42
+        ],
+        "post_delay": 800,
+        "timeout": 3000,
+        "next": ["邮件-第2封-返回"],
+        "on_error": ["邮件-第2封-返回"]
+    },
+    "邮件-第2封-返回": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            515,
+            865,
+            160,
+            90
+        ],
+        "template": ["邮件/邮件-返回按钮_1.png"],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 2500,
+        "next": ["邮件-第3封"],
+        "on_error": ["邮件-第3封"]
+    },
+    "邮件-第3封": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            30,
+            245,
+            185,
+            80
+        ],
+        "template": ["邮件/邮件-邮件箱标题_1.png"],
+        "threshold": 0.7,
+        "action": "Click",
+        "target": [
+            130,
+            613,
+            380,
+            56
+        ],
+        "post_delay": 1200,
+        "timeout": 2500,
+        "next": [
+            "邮件-第3封-收取",
+            "邮件-第3封-返回"
+        ]
+    },
+    "邮件-第3封-收取": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            370,
+            865,
+            160,
+            90
+        ],
+        "template": ["邮件/邮件-收取按钮_1.png"],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 800,
+        "timeout": 3000,
+        "next": ["邮件-第3封-关弹窗"],
+        "on_error": ["邮件-第3封-返回"]
+    },
+    "邮件-第3封-关弹窗": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            150,
+            340,
+            420,
+            90
+        ],
+        "template": ["邮件/邮件-获得物品横幅_1.png"],
+        "threshold": 0.7,
+        "action": "Click",
+        "target": [
+            230,
+            818,
+            265,
+            42
+        ],
+        "post_delay": 800,
+        "timeout": 3000,
+        "next": ["邮件-第3封-返回"],
+        "on_error": ["邮件-第3封-返回"]
+    },
+    "邮件-第3封-返回": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            515,
+            865,
+            160,
+            90
+        ],
+        "template": ["邮件/邮件-返回按钮_1.png"],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 2500,
+        "next": ["邮件-第4封"],
+        "on_error": ["邮件-第4封"]
+    },
+    "邮件-第4封": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            30,
+            245,
+            185,
+            80
+        ],
+        "template": ["邮件/邮件-邮件箱标题_1.png"],
+        "threshold": 0.7,
+        "action": "Click",
+        "target": [
+            130,
+            715,
+            380,
+            56
+        ],
+        "post_delay": 1200,
+        "timeout": 2500,
+        "next": [
+            "邮件-第4封-收取",
+            "邮件-第4封-返回"
+        ]
+    },
+    "邮件-第4封-收取": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            370,
+            865,
+            160,
+            90
+        ],
+        "template": ["邮件/邮件-收取按钮_1.png"],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 800,
+        "timeout": 3000,
+        "next": ["邮件-第4封-关弹窗"],
+        "on_error": ["邮件-第4封-返回"]
+    },
+    "邮件-第4封-关弹窗": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            150,
+            340,
+            420,
+            90
+        ],
+        "template": ["邮件/邮件-获得物品横幅_1.png"],
+        "threshold": 0.7,
+        "action": "Click",
+        "target": [
+            230,
+            818,
+            265,
+            42
+        ],
+        "post_delay": 800,
+        "timeout": 3000,
+        "next": ["邮件-第4封-返回"],
+        "on_error": ["邮件-第4封-返回"]
+    },
+    "邮件-第4封-返回": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            515,
+            865,
+            160,
+            90
+        ],
+        "template": ["邮件/邮件-返回按钮_1.png"],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 2500,
+        "next": ["邮件-关闭邮箱"],
+        "on_error": ["邮件-关闭邮箱"]
+    },
+    "邮件-关闭邮箱": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            30,
+            245,
+            185,
+            80
+        ],
+        "template": ["邮件/邮件-邮件箱标题_1.png"],
+        "threshold": 0.7,
+        // 面板右上角的返回箭头（列表页与详情页都有该箭头，位置一致）。
+        "action": "Click",
+        "target": [
+            615,
+            260,
+            65,
+            58
+        ],
+        "post_delay": 1000,
+        "timeout": 5000,
+        "next": ["邮件-完成"]
+    },
+    "邮件-完成": {
+        "recognition": "TemplateMatch",
+        "roi": [
+            30,
+            245,
+            185,
+            80
+        ],
+        "template": ["邮件/邮件-邮件箱标题_1.png"],
+        "threshold": 0.7,
+        "inverse": true,
+        // 「邮件箱」标题消失 = 已回到主界面，任务结束。
+        "action": "DoNothing",
+        "timeout": 8000
+    }
+}
