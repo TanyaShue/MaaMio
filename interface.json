@@ -25,6 +25,7 @@
         "./tasks/领取邮件.json",
         "./tasks/打开游戏.json",
         "./tasks/卖蛋.json",
-        "./tasks/签到.json"
+        "./tasks/签到.json",
+        "./tasks/刷体力.json"
     ]
 }
