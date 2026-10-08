@@ -47,7 +47,6 @@ ROOT = os.path.dirname(os.path.dirname(HERE))          # 项目根目录
 AGENT_DIR = os.path.join(ROOT, ".agent")
 SHOT_DIR = os.path.join(AGENT_DIR, "shots")
 RUN_DIR = os.path.join(AGENT_DIR, "runs")
-PROBE_DIR = os.path.join(AGENT_DIR, "probe")           # -ol 覆盖层资源
 IMAGE_ROOT = os.path.join(ROOT, "resource", "base", "image")
 PI_CONFIG = os.path.join(ROOT, "config", "maa_pi_config.json")
 MATCH_PY = os.path.join(HERE, "match.py")
@@ -577,161 +576,6 @@ def cmd_run(args) -> int:
     return code or 0
 
 
-# -------------------------------------------------------------------- probe --
-
-# 探测节点放在 tools/agent/probe/pipeline/probe.json（入库、可复用），
-# 通过 maactl 的 -ol 覆盖层加载，因此绝不会污染可发布的 resource/。
-# Probe nodes live in tools/agent/probe/ and are loaded through maactl's -ol
-# overlay, so the shipped resource pack never sees them.
-PROBE_OVERLAY = os.path.join(HERE, "probe")
-
-
-def cmd_probe(args) -> int:
-    """用 -ol 挂 agent 专用覆盖层跑探测节点，再把日志里的 all_results_ 捞出来。
-
-    这是「问设备要答案」的手段：OCR 能不能读出某段文字、某个模板在真机上到底
-    多少分，都只能由 MaaFramework 自己回答——离线匹配只是它的近似。
-    """
-    overlay = args.overlay or PROBE_OVERLAY
-    if not os.path.isdir(os.path.join(overlay, "pipeline")):
-        die(f"probe 覆盖层里没有 pipeline/：{overlay}")
-    ns = argparse.Namespace(
-        target=args.node, node=True, id=args.id, overlay=[overlay],
-        stop_after=args.stop_after, timeout=None, events="focus", resource=args.resource,
-        serial=args.serial, extra=None, retries=args.retries,
-        no_trace=False, full=args.full, show_failures=False,
-    )
-    code = cmd_run(ns)
-
-    run_root = os.path.join(RUN_DIR, ns.id) if ns.id else None
-    logs = []
-    if run_root:
-        logs = [os.path.join(run_root, d, "maafw.log")
-                for d in sorted(os.listdir(run_root)) if d.startswith("maafw")]
-    log_file = next((p for p in logs if os.path.isfile(p)), None)
-    if log_file:
-        print("\n=== probe 识别明细（MaaFramework 自己给出的结果）===")
-        for entry in read_scores(log_file):
-            if entry["node"] != args.node:
-                continue
-            if entry["algorithm"] == "OCR":
-                rows = [{"text": r.get("text"), "box": r.get("box"),
-                         "score": round(float(r.get("score", 0)), 4)} for r in entry["all"]]
-            else:
-                rows = [{"score": round(float(r.get("score", 0)), 4), "box": r.get("box")}
-                        for r in entry["all"]]
-            print(json.dumps({"ts": entry["ts"], "node": entry["node"],
-                              "algorithm": entry["algorithm"], "results": rows}, ensure_ascii=False))
-    return code
-
-
-# -------------------------------------------------------------------- verify --
-
-def _iter_pngs(specs) -> list:
-    import glob as _glob
-
-    out = []
-    for spec in specs or []:
-        path = spec if os.path.isabs(spec) else os.path.join(ROOT, spec)
-        if any(ch in spec for ch in "*?["):
-            out += sorted(_glob.glob(path))
-        elif os.path.isdir(path):
-            out += [os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith(".png")]
-        elif os.path.isfile(path):
-            out.append(path)
-        else:
-            die(f"verify: 路径不存在 {spec}")
-    if not out:
-        die("verify: 没有匹配到任何 PNG")
-    return out
-
-
-def cmd_verify(args) -> int:
-    """模板鲁棒性体检：在正样本帧上取最低分、负样本帧上取最高分，看阈值能不能分开。
-
-    这是「写 pipeline 之前」最该跑的一步——一个在截图里完美命中、但在游戏的
-    过场动画/半透明蒙版下掉到 0.5 的模板，会让整条链路随机失败。
-    """
-    try:
-        import match as M
-    except ImportError:
-        sys.path.insert(0, HERE)
-        import match as M  # noqa: PLC0415
-
-    tpl_path = args.template if os.path.isabs(args.template) else os.path.join(ROOT, args.template)
-    if not os.path.isfile(tpl_path):
-        die(f"模板不存在：{args.template}")
-    tpl, _ = M._pixel_array(tpl_path, need_green_mask=bool(args.green_mask))
-    th, tw = tpl.shape
-
-    def score_of(path):
-        gray, _ = M._pixel_array(path, need_green_mask=False)
-        if args.roi:
-            x, y, w, h = parse_roi(args.roi)
-            gray = gray[max(0, y):min(gray.shape[0], y + h), max(0, x):min(gray.shape[1], x + w)]
-        if th > gray.shape[0] or tw > gray.shape[1]:
-            return None
-        return float(M._score_map(gray, tpl, args.method, None).max())
-
-    pos = [(p, score_of(p)) for p in _iter_pngs(args.pos)]
-    neg = [(p, score_of(p)) for p in _iter_pngs(args.neg)]
-    pos = [(p, s) for p, s in pos if s is not None]
-    neg = [(p, s) for p, s in neg if s is not None]
-    if not pos:
-        die("verify: 没有任何正样本帧")
-
-    worst_pos_path, worst_pos = min(pos, key=lambda kv: kv[1])
-    best_neg_path, best_neg = max(neg, key=lambda kv: kv[1]) if neg else (None, None)
-    margin = worst_pos - best_neg if neg else None
-
-    report = {
-        "template": rel(tpl_path),
-        "template_size": [tw, th],
-        "roi": args.roi or "full",
-        "positives": len(pos),
-        "negatives": len(neg),
-        "pos_min": round(worst_pos, 4),
-        "pos_min_frame": rel(worst_pos_path),
-        "pos_median": round(sorted(s for _, s in pos)[len(pos) // 2], 4),
-        "neg_max": round(best_neg, 4) if neg else None,
-        "neg_max_frame": rel(best_neg_path) if neg else None,
-        "separation": round(margin, 4) if margin is not None else None,
-    }
-    if args.threshold is not None:
-        report["threshold"] = args.threshold
-        report["all_pos_above"] = all(s >= args.threshold for _, s in pos)
-        report["all_neg_below"] = all(s < args.threshold for _, s in neg) if neg else None
-
-    if args.json:
-        print(json.dumps(report, ensure_ascii=False, indent=2))
-    else:
-        print(f"模板 {report['template']}  {tw}x{th}  roi={report['roi']}")
-        print("\n正样本（应命中）分数，升序：")
-        for p, s in sorted(pos, key=lambda kv: kv[1])[: args.show]:
-            print(f"  {s:.4f}  {rel(p)}")
-        if len(pos) > args.show:
-            print(f"  … 共 {len(pos)} 帧，最低 {worst_pos:.4f}，中位 {report['pos_median']:.4f}")
-        if neg:
-            print("\n负样本（不该命中）分数，降序：")
-            for p, s in sorted(neg, key=lambda kv: kv[1], reverse=True)[: args.show]:
-                print(f"  {s:.4f}  {rel(p)}")
-            if len(neg) > args.show:
-                print(f"  … 共 {len(neg)} 帧，最高 {best_neg:.4f}")
-            verdict = "可分" if margin > 0 else "不可分（模板不可用）"
-            print(f"\n分离度 = 正样本最低 {worst_pos:.4f} - 负样本最高 {best_neg:.4f} = {margin:+.4f}  -> {verdict}")
-            if margin > 0:
-                print(f"建议阈值区间: ({best_neg:.3f}, {worst_pos:.3f})，取中 {best_neg + margin / 2:.3f}")
-        if args.threshold is not None:
-            ok = report["all_pos_above"] and (report["all_neg_below"] is not False)
-            print(f"阈值 {args.threshold}: 正样本全部通过={report['all_pos_above']}  "
-                  f"负样本全部低于阈值={report['all_neg_below']}  -> {'OK' if ok else '不达标'}")
-    if margin is not None and margin <= 0:
-        return 1
-    if args.threshold is not None and not report["all_pos_above"]:
-        return 1
-    return 0
-
-
 # ------------------------------------------------------------------- doctor --
 
 def cmd_doctor(args) -> int:
@@ -839,29 +683,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--no-trace", action="store_true")
     sp.add_argument("extra", nargs="*", help="原样透传给 maactl 的额外参数")
     sp.set_defaults(func=cmd_run)
-
-    sp = sub.add_parser("probe", help="跑 agent 专用探测节点（-ol 覆盖层，如全屏 OCR）")
-    add_common(sp)
-    sp.add_argument("--node", default="_probe-ocr-full", help="探测节点名（见 tools/agent/probe/pipeline/probe.json）")
-    sp.add_argument("--id", help="本次运行目录名")
-    sp.add_argument("--overlay", help="自定义探测覆盖层目录（默认 tools/agent/probe）")
-    sp.add_argument("--resource")
-    sp.add_argument("--stop-after", default="25s")
-    sp.add_argument("--retries", type=int, default=2)
-    sp.add_argument("--full", action="store_true", help="trace 更详细")
-    sp.set_defaults(func=cmd_probe)
-
-    sp = sub.add_parser("verify", help="模板鲁棒性体检（正/负样本帧上的分数分布）")
-    sp.add_argument("--template", required=True)
-    sp.add_argument("--pos", action="append", required=True, help="正样本：目录或 PNG，可重复")
-    sp.add_argument("--neg", action="append", help="负样本：目录或 PNG，可重复")
-    sp.add_argument("--roi", help="只在 ROI 内搜索（x,y,w,h）")
-    sp.add_argument("--threshold", type=float, default=0.7, help="想验证的阈值（默认 0.7）")
-    sp.add_argument("--method", type=int, default=5)
-    sp.add_argument("--green-mask", action="store_true")
-    sp.add_argument("--show", type=int, default=6, help="打印前 N 帧（默认 6）")
-    sp.add_argument("--json", action="store_true")
-    sp.set_defaults(func=cmd_verify)
 
     sp = sub.add_parser("doctor", help="环境自检")
     add_common(sp)

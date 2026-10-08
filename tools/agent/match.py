@@ -46,7 +46,7 @@ Numerics
   assumed: ``matchTemplate(zeros(1280, 720, 3), tpl, TM_CCOEFF_NORMED)`` is all
   zeros, and so is a constant template against a real screenshot.  (An earlier
   revision of this file used 1.0 here — that made every flat region of a black
-  splash screen look like a perfect match.  See ``tests/test_match_parity.py``.)
+  splash screen look like a perfect match.  (Measured with cv2 4.13, not assumed.)
 
 * The correlation is computed over the **valid** (non-padded) window region
   only; the score map has shape ``(H - h + 1, W - w + 1)``.

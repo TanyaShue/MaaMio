@@ -1,101 +1,68 @@
-# tools/agent — 给 agent 用的 MaaFW 编写工具链
+# tools/agent — MaaFW 编写工具
 
-这套工具把「看屏幕 → 造模板 → 写 pipeline → 跑 → 读证据 → 改」这条闭环补齐，
-让 agent（或人）可以**在动手之前**就知道一个模板到底靠不靠得住，而不用靠猜。
+给 agent（或人）写 MaaFramework pipeline 时用的最小工具集。**先把流程看懂再动手**，
+规程见仓库根 [`AGENTS.md`](../../AGENTS.md)，跨项目通用版见
+[`skills/maafw-authoring/SKILL.md`](../../skills/maafw-authoring/SKILL.md)。
 
-配套的操作规程在仓库根的 [`AGENTS.md`](../../AGENTS.md)，可复用的技能包在
-[`skills/maafw-authoring`](../../skills/maafw-authoring/SKILL.md)。
-
-## 依赖
-
-- Python 3.9+，`Pillow` + `numpy`（`match.py` / `crop` / `verify` 需要）。
-  本机可直接用 `D:\DeveEnvironment\Program\Anaconda3\python.exe`（另外带 `cv2`，可当对照 oracle）。
-- `maactl` 在 PATH 上（npm 全局安装），或设 `MAACTL_BINARY`。
-- `adb`：默认从 `config/maa_pi_config.json` 的 `adb.adb_path` / `adb.address` 读取，
-  也可用 `--adb-path` / `--serial` 或 `MAA_ADB_PATH` / `MAA_ADB_SERIAL` 覆盖。
-
-先自检：
+只需要 Python 3.9+ 与 `Pillow` + `numpy`；`maactl` 在 PATH 上；adb 从
+`config/maa_pi_config.json` 读取（可用 `--adb-path` / `--serial` 覆盖）。
 
 ```powershell
-python tools/agent/maa.py doctor
+$py = "D:\DeveEnvironment\Program\Anaconda3\python.exe"   # 本机随便哪个带 Pillow+numpy 的都行
+& $py tools\agent\maa.py doctor
 ```
 
-## 子命令
+## 六个命令
 
-| 命令      | 作用                                                                      |
-| --------- | ------------------------------------------------------------------------- |
-| `capture` | 设备截图存到 `.agent/shots/`（adb screencap + pull）                      |
-| `crop`    | 从截图切模板，按 `resource/base/image/<功能组>/<节点名>_1.png` 约定落盘   |
-| `match`   | 离线模板匹配（等价 `match.py`），不连设备就能算分数                       |
-| `verify`  | **模板体检**：正样本帧最低分 vs 负样本帧最高分，判断阈值能不能分开        |
-| `run`     | 用 maactl 跑 task/node，每次独立日志目录，跑完自动打 trace                |
-| `trace`   | 把 `maafw.log` 解析成节点级时间线（识别分数、阈值、命中/未命中）          |
-| `probe`   | 通过 `-ol` 覆盖层跑探测节点（全屏 OCR、单模板实测分数），不改 `resource/` |
-| `doctor`  | 环境自检                                                                  |
+| 命令      | 用途                                                                    |
+| --------- | ----------------------------------------------------------------------- |
+| `capture` | 设备截图存到 `.agent/shots/`                                            |
+| `crop`    | 从截图切模板，按 `resource/base/image/<组>/<节点名>_1.png` 落盘         |
+| `match`   | **离线**算一个模板在某张截图上的分数（用来查阈值安不安全）              |
+| `run`     | 底层就是 `maactl run`，另外给你独立日志目录、连接失败重试、跑完打时间线 |
+| `trace`   | 把 `maafw.log` 解析成节点时间线（分数 / 阈值 / OK\|MISS）               |
+| `doctor`  | 环境自检                                                                |
 
-典型用法：
+## 平时怎么用
 
 ```powershell
-$py = "D:\DeveEnvironment\Program\Anaconda3\python.exe"
-
-# 1. 看屏幕
+# 1) 看懂界面：截图，然后放大 + 画网格量坐标（不要目测，预览会缩放）
 & $py tools\agent\maa.py capture --out title.png
 
-# 2. 切模板（落在 resource/base/image/打开游戏/ 下）
-& $py tools\agent\maa.py crop --shot title.png --roi 330,747,128,38 `
-      --group 打开游戏 --name 打开游戏-点击开始游戏_1
+# 2) 切模板
+& $py tools\agent\maa.py crop --shot title.png --roi 258,364,200,46 `
+      --group 邮件 --name 邮件-获得物品横幅_1
 
-# 3. 体检——这一步不做完不要写进 pipeline
-& $py tools\agent\maa.py verify --template resource/base/image/打开游戏/打开游戏-点击开始游戏_1.png `
-      --pos .agent/sets/title_pos --neg .agent/sets/title_neg --threshold 0.7
+# 3) 查阈值两面——「该命中」的一面
+& $py tools\agent\maa.py match --screen title.png `
+      --template resource/base/image/邮件/邮件-获得物品横幅_1.png
 
-# 4. 跑任务并自动给时间线
-& $py tools\agent\maa.py run --task 打开游戏 --timeout 300s
+# 4) 查阈值两面——「不该命中」的一面（这一步别省）
+& $py tools\agent\maa.py match --screen list.png `
+      --template resource/base/image/邮件/邮件-返回按钮_1.png --roi 515,865,160,90
 
-# 5. 问真机要答案（OCR 能不能读出某段文字、某模板在真机上几分）
-& $py tools\agent\maa.py probe --node _probe-ocr-title
+# 5) 跑任务 + 看时间线
+& $py tools\agent\maa.py run --task 领取邮件 --timeout 180s
 ```
 
-## verify 怎么读
+## 时间线怎么读
 
 ```
-锚点                正min      负max      分离度   阈值0.7   正/负帧数
-开始游戏 文字片段     0.7769    0.4204    +0.3565     通过    16/50
+[ 7.857s] Reco.Succeeded  邮件-第2封-返回  TemplateMatch  best=0.9945  thr=0.850  OK
+[16.321s] Node.Failed     邮件-第4封  (3016ms)
 ```
 
-- **分离度 = 正样本最低分 − 负样本最高分**。这项运动里唯一有意义的指标。
-  单帧 1.0000 毫无意义——半透明蒙版下的模板在其它帧可以掉到 0.5 以下。
-- 经验门槛：分离度 > 0.15 才算能用；> 0.3 比较安心；≤ 0 直接换锚点。
-- 阈值取在 `(负max, 正min)` 中间，不要贴着任一端。
+- `best` 是这次识别的实际最高分，`thr` 是节点阈值，`OK`/`MISS` 是判定结果。
+- 同一节点反复 `MISS` 最后 `OK` 属正常（轮询式流程），只看最终 `Task.Succeeded/Failed`。
+- `maa.py run` 每次给你 `.agent/runs/<id>/`：`stdout.log`、`stderr.log`、`maafw/maafw.log`
+  都在。**别拿同一个日志目录跑第二次——`maactl -log` 会把它清空。**
 
-## probe 怎么用
+## match 的其他参数
 
-`tools/agent/probe/pipeline/probe.json` 里的节点通过 `maactl -ol` 覆盖层加载，
-所以**永远不会进可发布的资源包**。改完 probe.json 直接跑即可：
-
-```powershell
-& $py tools\agent\maa.py probe --node _probe-match-title   # 真机上的实际分数
-& $py tools\agent\maa.py probe --node _probe-ocr-full      # 全屏 OCR 出所有文字
-```
-
-离线 `match.py` 只是 MaaFramework（OpenCV）的近似；要判定「模板在真机上到底几分」，
-以 probe 的日志为准。
-
-## 测试
-
-```powershell
-# numpy 引擎 vs 真正的 cv2.matchTemplate（需要 cv2 的 Python）
-python tools/agent/tests/test_match_parity.py
-
-# 用真实录屏帧复核仓库里 4 个锚点在阈值 0.7 下是否仍然可分
-python tools/agent/tests/verify_anchors.py
-```
-
-`test_match_parity.py` 是这套工具的地基：它保证离线分数与 MaaFramework 用的
-`cv2.matchTemplate` 在良态窗口上一致（m5 ≤ 1.1e-4，m3/m1 ≤ 2e-6），并且退化分支
-（常量模板 → 1.0，常量窗口 → 0.0）完全对齐。
+`--roi x,y,w,h` 只在该区域搜索；`--threshold` 给判定；`--method` 默认 5
+（TM_CCOEFF_NORMED，越高越像）；`--top N` 列出前 N 个候选位置。实现见 `match.py`
+（Pillow + numpy，`TM_CCOEFF_NORMED` 与 OpenCV 对齐）。
 
 ## 中间产物
 
-全部写在 `.agent/`（已 gitignore）：`shots/` 截图、`runs/` 每次运行的
-`maafw/maafw.log` + stdout/stderr、`sets/` 标注帧集、`tmp/` 临时脚本。
+全在 `.agent/`（已 gitignore）：`shots/` 截图、`runs/` 每次运行的日志。
