@@ -6,6 +6,10 @@ dist/
 pnpm-lock.yaml
 uv.lock
 MaaCommonAssets/
+# agent 工作区与运行日志：里面全是截图/日志，格式化没有意义
+# Agent scratch space and run logs: nothing in there is source.
+.agent/
+debug/
 resource/base/model/ocr/
 tools/schema/interface.schema.json
 tools/schema/interface_config.schema.json
