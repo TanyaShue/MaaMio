@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "packageVersion": "0.2.0",
+  "target": "codex",
+  "scope": "project",
+  "profile": "skills-only",
+  "skills": {
+    "maa-cli-operate": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-cli-operate",
+      "hash": "1a5e66eb36a417cc6882ca9783ed20a833c18286a2ed9ff134d72c841f89b3bb"
+    },
+    "maa-diagnose": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-diagnose",
+      "hash": "a9dd3fee40a2b90d12d42635c6c0f46ffa2468124e204c9bc0ceef9bd4b994e5"
+    },
+    "maa-interface-guide": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-interface-guide",
+      "hash": "42a8f89fcda02ca565fd72d785c6721f6e431543373111d1a06088a804830d12"
+    },
+    "maa-pipeline-generate": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-pipeline-generate",
+      "hash": "a4cb9359dcb4d440ab0a933ee459bdd59e51badbd58187989efa607a32e04213"
+    },
+    "maa-pipeline-graph": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-pipeline-graph",
+      "hash": "c74f8d165cb39e45771e1d59d4a8279654fe1d68080061e398883a0c700cec3e"
+    },
+    "maa-pipeline-guide": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-pipeline-guide",
+      "hash": "f9f03c77d7d6d3c856b0a12f465bc9bdf5af35f4e010d5a29ed6f572db2f5813"
+    },
+    "maa-pipeline-history-audit": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-pipeline-history-audit",
+      "hash": "aa13e4830aa9c0077d370c687c7d07c772dede05b8a7f6a8172489e1fc34b8b1"
+    },
+    "maa-pipeline-option": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-pipeline-option",
+      "hash": "e33efd94529bca1fde4c9fd5ec0efd6c020f3f765d88fbd9b8d37995b0456ed0"
+    },
+    "maa-pipeline-testing": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-pipeline-testing",
+      "hash": "90ed12bd1b334341c0b193c5db7adb7eedcc9931b8c9ed08766e8f0b0bd87a3d"
+    },
+    "maa-project-create": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-project-create",
+      "hash": "cc3d1493268c11144fb62930fc4678705d4083e59b1b1223d1be63faa6735d6f"
+    },
+    "maa-project-init": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-project-init",
+      "hash": "d8a7812f91d4fc37c55b0459602a5c60898832959b8b4bd380d0ad421c2f243f"
+    },
+    "maa-wiki": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-wiki",
+      "hash": "35ef64f1f17d60792ede2f754a35aea65e2c426355b451bb61b018555b6bbe57"
+    },
+    "maa-workflow-build": {
+      "path": "D:\\01_Projects\\github\\MaaMio\\.agents\\skills\\maa-workflow-build",
+      "hash": "e884b055f6eb5e86a7f88c958b965360b4cc28230afa5ede7f52d4a8b4183a7d"
+    }
+  },
+  "mcp": null
+}
