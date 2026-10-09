@@ -61,7 +61,16 @@ MaaFramework（PI v2）项目。改 pipeline / 模板就按下面五步走，不
 - **别让 `pnpm check:maa` 中途被打断**：它首次会下载 MaaFramework 运行时，且中断时会把
   `resource/base/image/**` 里受跟踪的图片删掉（`git checkout -- resource/base/image` 可恢复）。
   本地校验只用 `pnpm check:schema`。
-- **`inverse: true` 遇上 `DirectHit` 永远不命中**（`mio.json` 里的 `mio-441848` 就是）。
+- **`inverse: true` 遇上 `DirectHit` 永远不命中**（`DirectHit` 必命中，取反后必不命中）。
+  旧版 `mio.json` 曾**故意**用它造一个"永不命中"的死节点，好让 `timeout` 有东西可以超时——
+  那不是 bug，是计时器；但代价见下一条。
+- **别用 `timeout` 当节拍器。** `on_error` 的协议语义是「识别超时，**或动作执行失败**」，
+  所以凡是以 `timeout` 计时的写法，每一跳在协议层面必然是一次失败事件：`debug/on_error`
+  每个周期堆一张截图，更要命的是**错误信道被心跳占满，真故障和正常心跳长得一模一样**。
+  正确写法（`mio-103994`）：`timeout: -1`（协议原文「无限等待，永不超时」→ 永不产生 error）
+  + 一个 `[JumpBack]` 目标节点，把周期放在那个目标自己的 `post_delay` 上——
+  它是 JumpBack 目标，每轮必然被重新命中执行，所以说好的延迟一定生效。
+  代价：`timeout: -1` 同时也交出了看门狗，设备掉线/游戏崩了不会报错，只会静静挂着。
 - **`post_delay` 实际默认 1000ms**（schema 写 200，被 `default_pipeline.json` 覆盖）。
 
 ## 当前任务
@@ -71,7 +80,10 @@ MaaFramework（PI v2）项目。改 pipeline / 模板就按下面五步走，不
 | 领取邮件     | `邮件-开始`     | 逐封打开判断有无「收取」；全部已领路径实测通过（17.1s），领取+关弹窗路径已单独验证 |
 | 打开游戏     | `打开游戏-开始` | 冷启动 → 登录 → 培育室（冷启动 40s，已在培育室时 3.5s）                            |
 | 签到         | `签到-开始签到` | 既有                                                                               |
-| 自动挂机卖蛋 | `mio-103994`    | `debug/on_error` 曾连续多日每 11 分钟留一张失败截图，值得按本规程复查              |
+| 刷体力       | `刷体力-开始`   | 莉莉托斯 1-9 完全探索扫荡；停条件写在结构里（体力 `<16` 回家）                     |
+| 自动挂机卖蛋 | `mio-103994`    | 无限心跳：`timeout: -1` 永不超时 + `post_delay: 620000` 周期，无失败截图           |
+
+`resource/base/pipeline/挖矿.json` 是 WIP：节点自洽但**没有任务入口**，当前不可达（详见该文件内注释）。
 
 ## 提交前
 
