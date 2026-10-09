@@ -1,4 +1,8 @@
 {
+    // 「挖矿」：WIP —— 状态机内部自洽（无断链、无重名、模板齐全），但**尚未注册任务入口**：
+    // tasks/ 下没有对应文件，interface.json 的 import 里也没有它，
+    // 因此当前没有任何任务能到达这里的节点。
+    // 要启用：新建 tasks/挖矿.json 注册 entry "挖矿-导航到目标层数"，并把该文件加进 interface.json 的 import。
     "挖矿-导航到目标层数": {
         "recognition": "DirectHit",
         "next": [
